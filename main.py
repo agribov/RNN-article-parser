@@ -48,6 +48,11 @@ def trainParser(trainingDir):
             # Comment out break if you want to run on more than one file
             break
 
+        
+# This function removes unnecessary words from the file. Current removed are:
+#    - URL (Word starting with http)
+#    - NULL words
+#    - Entities
 def filterOutCrap(text):
     for word in text:
         if not (word):
