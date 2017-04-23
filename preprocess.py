@@ -25,16 +25,18 @@ def getTextFromFolder(directory):
     
     # Declare word counter (keep with dict)
     nWords = 0;
+    maxS = 0
+    maxQ = 0
 
     # Declare a list of articles. Each member (article) will be a list of words.
     articles = []
 
+    print "Processing file: "
 
     for filename in os.listdir(directory):
         words = []
         if filename.endswith(".question"):
-            print "Processing file: "
-            print filename
+            print '{0}\r'.format(filename),
             with open(os.path.join(directory, filename), 'r') as f:
                 lineCount = 0;
                 text = []
@@ -59,20 +61,30 @@ def getTextFromFolder(directory):
                             if not dict.has_key(word) and isinstance(word, basestring):
                                 dict.setdefault(word, nWords);
                                 nWords += 1
+
+                        if lineCount == 3:
+                            maxS = max(maxS, len(words))
+                        elif lineCount == 5:
+                            maxQ = max(maxQ, len(words))
                         #print text
                 # Add this article to the list of articles.
                 # Each article is the 3-tuple described above.
                 articles.append(text)
                 #print articles[0][0][10]
     saveArticlesAsNumbers(articles, dict, directory)
-    return dict, articles
+    print
+    return maxS, maxQ, nWords
 
 def saveArticlesAsNumbers(articles, dict, dir):
-    print articles[0][1]
-    print articles[0][2][0]
-    print dict[articles[0][2][0]]
+    
     fileNumber = 0
     dir = dir + "/numbered"
+
+    try:
+        os.stat(dir)
+    except:
+        os.mkdir(dir)
+    
     for article in articles:
         filename = str(fileNumber) + ".txt"
         #print article[1]

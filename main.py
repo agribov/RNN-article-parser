@@ -12,6 +12,7 @@ import tensorflow as tf
 import math
 import re
 import preprocess
+from dataset import Dataset
 
 # Declare global variables.
 
@@ -21,14 +22,19 @@ trainingDirectory = "../cnn/questions/training"
 validationDirectory = "../cnn/questions/validation"
 smallDirectory = "../cnn/questions/subset"
 
+#x, y = mnist.train.next_batch(3);
+#print x[0];
+
 dict, articleList = preprocess.getTextFromFolder(smallDirectory)
 #print(len(dict))
 
 # LSTM parameters
-batchSize = 3 # this is basically hidden layer number of features
+batchSize = 3
 LSTM_num_units = 256
 n_steps = 20
-n_classes = 814
+n_hidden = 128 # hidden layer num of features
+n_classes = 1
+n_input = 10000
 
 # tf Graph input
 # X will be 3D tensor, 1st is articles, then words, then vectorization of word.
@@ -45,7 +51,7 @@ biases = {
 }
 
 # Training method
-def trainParser(trainingDir, weights):
+def trainParser(x, weights, biases):
 
 
     # Unpack input tensor:
@@ -114,9 +120,13 @@ dict, articleList = preprocess.getTextFromFolder(trainingDir)
 with tf.Session() as sess:
     sess.run(init)
     step = 1
+    data = Dataset("../cnn/questions/subset/numbered/", 3)
+    
     # Keep training until reach max iterations
-    while step * batch_size < training_iters:
-        batch_x, batch_y = mnist.train.next_batch(batch_size)
+    #while step * batch_size < training_iters:
+    while not data.is_done:
+        batch_x, batch_y = d.next_batch()
+        #= mnist.train.next_batch(batch_size)
         # Reshape data to get 28 seq of 28 elements
         batch_x = batch_x.reshape((batch_size, n_steps, n_input))
         # Run optimization op (backprop)
