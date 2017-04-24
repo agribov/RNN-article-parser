@@ -10,38 +10,46 @@ from tensorflow.contrib import rnn
 import preprocess
 from dataset import Dataset
 
+import pickle
+
 # Directories with questions
-testDirectory = "../cnn/questions/test"
-trainingDirectory = "../cnn/questions/training"
-validationDirectory = "../cnn/questions/validation"
-smallDirectory = "../cnn/questions/subset"
+testDir = "../cnn/questions/test"
+trainingDir = "../cnn/questions/training"
+validationDir = "../cnn/questions/validation"
+smallDir = "../cnn/questions/subset"
 smallTest = "../cnn/questions/smallTest"
 
+preprocess_files = True
 trainModel = True
-modelName = 'model-sample'
+modelName = './models/model-sample-FULL'
 saveModel = True
 loadModel = False
 
-dir = smallTest
-
-maxS, maxQ, dSize = preprocess.getTextFromFolder(dir)
-print("Done with pre-processing\n")
+if preprocess_files:
+    print("Starting preprocessor")
+    dirs = (testDir, trainingDir, validationDir)
+    maxS, maxQ, dSize = preprocess.getTextFromFolder(dirs)
+    print("Done with pre-processing\n")
+else:
+    params = pickle.load(open("params.p", "rb") )
+    maxS = params[0]
+    maxQ = params[1]
+    dSize = params[3]
 
 # Parameters
-learning_rate = 0.001
-training_iters = 100000
-batch_size = 10
+learning_rate = 0.00005
+batch_size = 32
 display_step = 10
+val_size = 1000
 
 # Network Parameters
 n_input = 1 # MNIST data input (img shape: 28*28)
 n_steps = maxS + maxQ  # timesteps
-n_hidden = 128 # hidden layer num of features
-#n_classes = 10 # MNIST total classes (0-9 digits)
+n_hidden = 256 # hidden layer num of features
 n_classes = dSize #SIZE OF DICTIONARY
+dropout = 0.2
 
 # tf Graph input
-#x = tf.placeholder("float", [None, n_steps, n_input])
 x = tf.placeholder("float", [None, n_steps, n_input])
 y = tf.placeholder("float", [None, n_classes])
 
@@ -66,7 +74,8 @@ def RNN(x, weights, biases):
 
     # Define a lstm cell with tensorflow
     lstm_cell = rnn.BasicLSTMCell(n_hidden, forget_bias=1.0)
-
+    lstm_cell = rnn.DropoutWrapper(lstm_cell, output_keep_prob=dropout)
+    
     # Get lstm cell output
     # NOTE: IS X IN THE RIGHT SHAPE? It used to be 28 input tensors, now it is one long one.
     outputs, states = rnn.static_rnn(lstm_cell, x, dtype=tf.float32)
@@ -94,7 +103,7 @@ init = tf.global_variables_initializer()
 # Launch the graph
 with tf.Session() as sess:
     print("Initializing session\n")
-    
+    dir = trainingDir
     if loadModel:
         loader = tf.train.import_meta_graph(modelName + '.meta')
         loader.restore(sess, tf.train.latest_checkpoint('./'))
@@ -109,7 +118,7 @@ with tf.Session() as sess:
         while data.done != 1:
             batch_x, batch_y = data.next_batch()
             #batch_x, batch_y = mnist.train.next_batch(batch_size)
-            # Reshape data to get 28 seq of 28 elements
+            # Redatashape data to get 28 seq of 28 elements
             batch_x = batch_x.reshape((batch_size, n_steps, n_input))
             # Run optimization op (backprop)
             sess.run(optimizer, feed_dict={x: batch_x, y: batch_y})
@@ -125,10 +134,28 @@ with tf.Session() as sess:
         print("Optimization Finished!")
         
     if saveModel:
+        try:
+            os.stat('./models')
+        except:
+            os.mkdir('./models')
+        
         saver = tf.train.Saver()
         saver.save(sess, modelName)
 
 
+    # VALIDATION:
+    if validation:
+        valData = Dataset(validationDir + "/numbered/", val_size, n_steps, dSize)
+        text_x, test_y = data.next_batch()
+        test_x = text_x.reshape((val_size, n_steps, n_input))
+
+        print("Running validation: ")
+        print("Validation accuracy is: ",\
+              sess.run(accuracy, feed_dict={x: test_x, y: test_y}))
+
+
+
+    
     """
     # Calculate accuracy for 128 mnist test images
     test_len = 128
