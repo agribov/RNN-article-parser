@@ -60,9 +60,11 @@ class Dataset:
         batch_fl = self.next_batch_file_list()
 
         # Create numpy arrays for returning. Batch size and max length determined in __init__.
-        self.snq = np.zeros((self.batch_size, self.MAX_X), dtype=np.int)
+        self.snq = np.zeros((self.batch_size, self.MAX_X + 1), dtype=np.int)
         self.answers = np.zeros((self.batch_size, self.dict_size), dtype=np.int)
         bNum = 0
+
+        splitter = np.array([self.pad_constant])
         
         for file_path in batch_fl:
             if file_path != None:
@@ -74,7 +76,7 @@ class Dataset:
 
                     # Pad the end of the array with constants (defined in __init__)
                     padSize = self.MAX_X - story.size - question.size
-                    entry = np.concatenate((story, question), axis=0)
+                    entry = np.concatenate((story, splitter, question), axis=0)
                     entry = np.lib.pad(entry, (0 ,padSize), 'constant', constant_values=self.pad_constant)
                     self.snq[bNum] = entry
 
