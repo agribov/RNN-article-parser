@@ -50,11 +50,11 @@ class Dataset:
             self.read = 0 #CHANGE THIS LATER: Need to tell next_batch function that
             # We have hit the last batch
             print "Reached last batch"
-            self.done = 1
+            self.done += 1
         return batch_fl
 
     def is_done(self):
-        return data.done
+        return self.done
 
     def next_batch(self):
         batch_fl = self.next_batch_file_list()
