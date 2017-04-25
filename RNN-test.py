@@ -24,7 +24,7 @@ smallTest = "../cnn/questions/smallTest"
 preprocess_files = True
 trainModel = True
 modelDir = './models/'
-modelName = 'model-full-1epocs-deeplstm'
+modelName = 'model-full-5epocs'
 saveModel = True
 loadModel = False
 validation = True
@@ -49,14 +49,14 @@ else:
 
 # Parameters
 learning_rate = 0.00005
-batch_size = 64
+batch_size = 256
 display_step = 10
 val_size = 1000
 
 # Network Parameters
 n_input = 1 # MNIST data input (img shape: 28*28)
 n_steps = maxS + maxQ  # timesteps
-n_hidden = 128 # hidden layer num of features
+n_hidden = 256 # hidden layer num of features
 n_classes = dSize #SIZE OF DICTIONARY
 dropout = 0.5
 embedding_size = 50
@@ -89,12 +89,12 @@ def RNN(x, weights, biases):
     lstm_cell = rnn.BasicLSTMCell(n_hidden, forget_bias=1.0)
     lstm_cell = rnn.DropoutWrapper(lstm_cell, output_keep_prob=dropout)
     
-    stacked_lstm = rnn.MultiRNNCell([rnn.DropoutWrapper(rnn.BasicLSTMCell(n_hidden, forget_bias=1.0), output_keep_prob=dropout) for _ in range(num_layers)], state_is_tuple=True)
-    initial_state = state = stacked_lstm.zero_state(batch_size, tf.float32)
+    #stacked_lstm = rnn.MultiRNNCell([rnn.DropoutWrapper(rnn.BasicLSTMCell(n_hidden, forget_bias=1.0), output_keep_prob=dropout) for _ in range(num_layers)], state_is_tuple=True)
+    #initial_state = state = stacked_lstm.zero_state(batch_size, tf.float32)
 
     # Get lstm cell output
     # NOTE: IS X IN THE RIGHT SHAPE? It used to be 28 input tensors, now it is one long one.
-    outputs, states = rnn.static_rnn(stacked_lstm, x, dtype=tf.float32)
+    outputs, states = rnn.static_rnn(lstm_cell, x, dtype=tf.float32)
 
     # Linear activation, using rnn inner loop last output
     return tf.matmul(outputs[-1], weights['out']) + biases['out']
